@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Organograma Meia Noite</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style id="app-css">
+/* Layout: faixa verde de clube no topo, barra de ferramentas, palco rolável com a árvore centralizada; editor em gaveta lateral */
+:root{
+  --bg:#eef4e8; --surface:#ffffff; --ink:#10261a; --muted:#587060;
+  --green:#0f4d2c; --green-2:#17673b; --lime:#b7e23a; --lime-ink:#1d3106;
+  --line:#7aa585; --team:#e1ebd8; --team-ink:#1f3d2a; --ring:#ffffff;
+  --danger:#b3261e; --shadow:0 6px 18px rgba(15,77,44,.16);
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow","Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1610; --surface:#13231a; --ink:#e4efe5; --muted:#9ab3a1;
+  --green:#1b6a3c; --green-2:#24804b; --lime:#c3ee48; --lime-ink:#1a2a04;
+  --line:#4f7d5d; --team:#1b3024; --team-ink:#d4e6d4; --ring:#13231a;
+  --danger:#f2867c; --shadow:0 6px 18px rgba(0,0,0,.45); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1610; --surface:#13231a; --ink:#e4efe5; --muted:#9ab3a1;
+  --green:#1b6a3c; --green-2:#24804b; --lime:#c3ee48; --lime-ink:#1a2a04;
+  --line:#4f7d5d; --team:#1b3024; --team-ink:#d4e6d4; --ring:#13231a;
+  --danger:#f2867c; --shadow:0 6px 18px rgba(0,0,0,.45); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
+
+.band{background:var(--green);color:#fff;border-bottom:5px solid var(--lime)}
+.band-in{display:flex;align-items:center;gap:16px;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1400px;margin:0 auto}
+.logo{width:64px;height:64px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden;flex:none;border:3px solid var(--lime);padding:0}
+.logo img{width:100%;height:100%;object-fit:contain}
+.logo span{font-family:var(--f-display);font-weight:800;color:#0f4d2c;font-size:20px;letter-spacing:.02em}
+button.logo{cursor:pointer}
+.heading{min-width:0}
+.eyebrow{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.14em;font-size:12px;color:var(--lime);font-weight:700}
+.heading h1{margin:2px 0 0;font-family:var(--f-display);font-weight:800;font-size:clamp(24px,4vw,36px);line-height:1.05;text-wrap:balance;text-transform:uppercase}
+.heading h1[contenteditable="true"]{border-bottom:2px dashed rgba(255,255,255,.45);outline:none;cursor:text}
+
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1400px;margin:0 auto}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--green-2)}
+.btn.primary{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.icon{width:34px;height:34px;padding:0;justify-content:center}
+.spacer{flex:1}
+.status{color:var(--muted);font-size:13px}
+.status.dirty{color:var(--ink);font-weight:600}
+.zoom{display:inline-flex;gap:4px;align-items:center}
+.zoom output{min-width:44px;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted)}
+.hint{color:var(--muted);font-size:13px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));max-width:1400px;margin:0 auto}
+
+.stage{overflow:auto;margin-top:6px;padding-block:12px}
+.chart{width:max-content;margin:0 auto;padding:16px 24px 40px}
+
+/* árvore */
+.tree ul{display:flex;justify-content:center;padding:24px 0 0;margin:0;position:relative}
+.tree li{list-style:none;position:relative;padding:24px 10px 0;display:flex;flex-direction:column;align-items:center}
+.tree li::before,.tree li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:24px;border-top:2px dashed var(--line)}
+.tree li::after{right:auto;left:50%;border-left:2px dashed var(--line)}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child{padding-top:0}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px dashed var(--line)}
+.tree ul ul::before{content:"";position:absolute;top:0;left:50%;height:24px;border-left:2px dashed var(--line)}
+.tree > ul.roots{padding-top:0;gap:48px;align-items:flex-start}
+.tree > ul.roots > li{padding-top:0}
+.tree > ul.roots > li::before,.tree > ul.roots > li::after{display:none}
+
+.teams{position:relative;margin-top:16px;padding-left:24px;display:flex;flex-direction:column;gap:8px;align-self:center}
+.teams::before{content:"";position:absolute;left:8px;top:-16px;bottom:20px;border-left:2px dashed var(--line)}
+.team-row{position:relative;display:flex;flex-direction:column;align-items:flex-start}
+.team-row::before{content:"";position:absolute;left:-16px;top:19px;width:14px;border-top:2px dashed var(--line)}
+
+/* fichas */
+.card{position:relative;text-align:center;user-select:none;border-radius:12px;transition:transform .12s ease}
+.editable .card{cursor:grab}
+.editable .card:hover{transform:translateY(-2px)}
+.card.ficha{width:196px;display:flex;flex-direction:column;align-items:center}
+.avatar{width:78px;height:78px;border-radius:50%;border:4px solid var(--lime);background:var(--ring);box-shadow:var(--shadow);overflow:hidden;display:grid;place-items:center;position:relative;z-index:1;margin-bottom:-16px}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar .ini{font-family:var(--f-display);font-weight:800;font-size:26px;color:var(--green-2)}
+.plate{background:var(--green);color:#fff;border-radius:10px;padding:22px 12px 10px;width:100%;box-shadow:var(--shadow)}
+.cargo{font-family:var(--f-display);font-weight:700;font-size:16px;line-height:1.1;text-transform:uppercase;letter-spacing:.02em;text-wrap:balance}
+.nome{font-size:13px;margin-top:3px;opacity:.92;line-height:1.25}
+.nome.vazio{opacity:.6;font-style:italic}
+.card.destaque .plate{background:var(--lime);color:var(--lime-ink)}
+.card.destaque .avatar{border-color:var(--green)}
+.card.bloco{min-width:180px;max-width:280px}
+.card.bloco .plate{padding:12px 20px;border-radius:999px}
+.card.equipe{width:178px;background:var(--team);color:var(--team-ink);border-radius:8px;padding:7px 11px;text-align:left;border:1px solid transparent}
+.card.equipe .elabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.card.equipe .ename{font-weight:700;font-size:13px;line-height:1.2}
+.card.equipe.destaque{background:var(--lime);color:var(--lime-ink)}
+.card.equipe.destaque .elabel{color:var(--lime-ink);opacity:.7}
+.card.sel .plate,.card.equipe.sel{outline:3px solid var(--lime);outline-offset:3px}
+.card.dragging{opacity:.35}
+.card.drop-inside .plate,.card.equipe.drop-inside{outline:3px dashed var(--lime);outline-offset:4px}
+.card.drop-before::before,.card.drop-after::before{content:"";position:absolute;background:var(--lime);border-radius:3px;z-index:3}
+.card.drop-before.h::before{left:-10px;top:10%;bottom:10%;width:5px}
+.card.drop-after.h::before{right:-10px;top:10%;bottom:10%;width:5px}
+.card.drop-before.v::before{top:-7px;left:0;right:0;height:5px}
+.card.drop-after.v::before{bottom:-7px;left:0;right:0;height:5px}
+
+.legend{margin:8px auto 24px;max-width:1400px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.legend-box{display:inline-flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--surface);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow)}
+.legend-box strong{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.08em;font-size:14px}
+.sw{display:inline-flex;align-items:center;gap:7px;font-size:13px}
+.sw i{width:26px;height:14px;border-radius:4px;display:inline-block}
+
+/* editor */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,100%);background:var(--surface);box-shadow:-10px 0 30px rgba(0,0,0,.2);z-index:20;display:flex;flex-direction:column;padding:calc(16px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) 18px;overflow:auto;gap:14px}
+.drawer h2{margin:0;font-family:var(--f-display);text-transform:uppercase;font-size:22px;letter-spacing:.03em}
+.dhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label,.flabel{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.field input[type=text],.field select{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--bg)}
+.check{display:flex;gap:8px;align-items:center}
+.photo-row{display:flex;gap:12px;align-items:center}
+.photo-row .avatar{margin:0;width:64px;height:64px;box-shadow:none}
+.photo-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.note{font-size:12px;color:var(--muted);margin:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:640px){
+  .drawer{top:auto;width:100%;max-height:78vh;border-radius:16px 16px 0 0;padding-left:max(18px,env(safe-area-inset-left,0px))}
+  .band-in{gap:12px}.logo{width:52px;height:52px}
+}
+@media (prefers-reduced-motion:reduce){.card{transition:none}.editable .card:hover{transform:none}}
+</style>
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="application/json" id="org-data">{"title":"Organograma institucional","subtitle":"E.C. Meia Noite SAF","logo":null,"roots":[{"id":"n1","tipo":"bloco","cargo":"Conselho de Administração","nome":"","destaque":false,"foto":null,"children":[{"id":"n2","tipo":"ficha","cargo":"CEO","nome":"Dra. Lucineia Nunes Fernandes Santos","destaque":false,"foto":null,"children":[{"id":"n3","tipo":"ficha","cargo":"Diretoria de Futebol","nome":"Willian Lanes de Lima","destaque":true,"foto":null,"children":[{"id":"n4","tipo":"ficha","cargo":"Técnico","nome":"Mauro Apolinário","destaque":false,"foto":null,"children":[{"id":"n5","tipo":"equipe","cargo":"Equipe","nome":"Preparação física","destaque":false,"foto":null,"children":[]},{"id":"n6","tipo":"equipe","cargo":"Equipe","nome":"Categorias de base","destaque":false,"foto":null,"children":[]},{"id":"n7","tipo":"equipe","cargo":"Projeto","nome":"Bom de Bola, Bom de Escola","destaque":true,"foto":null,"children":[]}]}]},{"id":"n8","tipo":"ficha","cargo":"Financeiro","nome":"","destaque":false,"foto":null,"children":[{"id":"n9","tipo":"equipe","cargo":"Equipe","nome":"Contas a pagar e receber","destaque":false,"foto":null,"children":[]},{"id":"n10","tipo":"equipe","cargo":"Equipe","nome":"Fechamento mensal","destaque":false,"foto":null,"children":[]},{"id":"n11","tipo":"equipe","cargo":"Projeto","nome":"Projeto social (IR)","destaque":false,"foto":null,"children":[]}]},{"id":"n12","tipo":"ficha","cargo":"Jurídico","nome":"","destaque":false,"foto":null,"children":[{"id":"n13","tipo":"equipe","cargo":"Equipe","nome":"Contratos","destaque":false,"foto":null,"children":[]}]},{"id":"n14","tipo":"ficha","cargo":"Comercial e Marketing","nome":"","destaque":false,"foto":null,"children":[{"id":"n15","tipo":"equipe","cargo":"Equipe","nome":"Patrocínios","destaque":false,"foto":null,"children":[]},{"id":"n16","tipo":"equipe","cargo":"Equipe","nome":"Comunicação","destaque":false,"foto":null,"children":[]}]}]}]}]}</script>
+<script id="app-js">
+(function(){
+  "use strict";
+  /* ================= ARMAZENAMENTO =================
+     Hoje os dados ficam salvos no navegador (localStorage).
+     Para usar o Firebase, substitua apenas o corpo destas duas funções,
+     por exemplo lendo e gravando o documento "organograma/principal" no Firestore.
+     O objeto "dados" é o organograma inteiro (título, logo, fichas e fotos). */
+  async function carregarDados(){
+    try { var s = localStorage.getItem("organograma-meia-noite"); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  }
+  async function salvarDados(dados){
+    localStorage.setItem("organograma-meia-noite", JSON.stringify(dados));
+  }
+  /* ================================================== */
+
+  var DATA_EL = document.getElementById("org-data");
+  var savedJSON = DATA_EL.textContent;
+  var state = JSON.parse(savedJSON);
+  var editable = false, art = null, dirty = false, selId = null, dragId = null, saving = false;
+  var zoom = 1;
+  try { var z = parseFloat(localStorage.getItem("org-zoom")); if (z >= 0.4 && z <= 1.6) zoom = z; } catch (e) {}
+  var app = document.getElementById("app");
+
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+  function initials(n){ var p = String(n||"").replace(/^(dr|dra|sr|sra)\.?\s+/i,"").trim().split(/\s+/).filter(Boolean); if(!p.length) return "?"; return (p[0][0] + (p.length>1 ? p[p.length-1][0] : "")).toUpperCase(); }
+  function uid(){ return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  function walk(list, fn, parent){ for (var i=0;i<list.length;i++){ if (fn(list[i], parent, list, i) === false) return false; if (walk(list[i].children, fn, list[i]) === false) return false; } }
+  function find(id){ var r=null; walk(state.roots, function(n,p,l,i){ if(n.id===id){ r={node:n,parent:p,list:l,index:i}; return false; } }); return r; }
+  function inSubtree(rootNode, id){ if (rootNode.id===id) return true; for (var i=0;i<rootNode.children.length;i++) if (inSubtree(rootNode.children[i], id)) return true; return false; }
+
+  /* ---------- render ---------- */
+  function cardHTML(n){
+    var cls = "card " + n.tipo + (n.destaque ? " destaque" : "") + (n.id===selId ? " sel" : "");
+    var attrs = ' data-id="'+esc(n.id)+'" tabindex="0" role="button" aria-label="'+esc((n.cargo||"")+" "+(n.nome||""))+'"' + (editable ? ' draggable="true"' : "");
+    if (n.tipo === "equipe"){
+      return '<div class="'+cls+'"'+attrs+'><div class="elabel">'+esc(n.cargo||"Equipe")+'</div><div class="ename">'+esc(n.nome||"Sem nome")+'</div></div>';
+    }
+    var nome = n.nome ? '<div class="nome">'+esc(n.nome)+'</div>' : (n.tipo==="ficha" ? '<div class="nome vazio">A definir</div>' : "");
+    var plate = '<div class="plate"><div class="cargo">'+esc(n.cargo||"Cargo")+'</div>'+nome+'</div>';
+    if (n.tipo === "bloco") return '<div class="'+cls+'"'+attrs+'>'+plate+'</div>';
+    var av = n.foto ? '<img src="'+esc(n.foto)+'" alt="">' : '<span class="ini">'+esc(initials(n.nome || n.cargo))+'</span>';
+    return '<div class="'+cls+'"'+attrs+'><div class="avatar">'+av+'</div>'+plate+'</div>';
+  }
+  function nodeHTML(n){
+    var h = cardHTML(n);
+    if (n.children.length){
+      var allTeams = n.children.every(function(c){ return c.tipo === "equipe"; });
+      if (allTeams) h += '<div class="teams">' + n.children.map(function(c){ return '<div class="team-row">'+nodeHTML(c)+'</div>'; }).join("") + '</div>';
+      else h += '<ul>' + n.children.map(function(c){ return '<li>'+nodeHTML(c)+'</li>'; }).join("") + '</ul>';
+    }
+    return h;
+  }
+  function logoHTML(){
+    var inner = state.logo ? '<img src="'+esc(state.logo)+'" alt="Escudo do clube">' : '<span>ECMN</span>';
+    return editable ? '<button class="logo" id="logo-btn" title="Trocar escudo do clube">'+inner+'</button>' : '<div class="logo">'+inner+'</div>';
+  }
+  function statusText(){
+    if (!editable) return "Somente leitura";
+    if (saving) return "Salvando…";
+    return dirty ? "Alterações não salvas" : "Tudo salvo";
+  }
+  function render(){
+    var sx = 0, sy = 0, st = document.querySelector(".stage"); if (st){ sx = st.scrollLeft; sy = st.scrollTop; }
+    app.innerHTML =
+      '<header class="band"><div class="band-in">'+logoHTML()+
+        '<div class="heading"><div class="eyebrow">'+esc(state.subtitle)+'</div><h1 id="org-title"'+(editable?' contenteditable="true" spellcheck="false"':'')+'>'+esc(state.title)+'</h1></div></div></header>'+
+      '<div class="toolbar">'+
+        (editable ? '<button class="btn primary" id="b-save"'+(dirty&&!saving?'':' disabled')+'>Salvar alterações</button><button class="btn" id="b-discard"'+(dirty&&!saving?'':' disabled')+'>Descartar</button><button class="btn" id="b-new">+ Nova ficha</button>' : '')+
+        '<span class="status'+(dirty?' dirty':'')+'" id="status" role="status">'+statusText()+'</span><span class="spacer"></span>'+
+        '<span class="zoom"><button class="btn icon" id="z-out" aria-label="Diminuir zoom">−</button><output id="z-val">'+Math.round(zoom*100)+'%</output><button class="btn icon" id="z-in" aria-label="Aumentar zoom">+</button><button class="btn" id="z-fit">Ajustar</button></span>'+
+      '</div>'+
+      (editable ? '<p class="hint">Clique numa ficha para editar. Arraste uma ficha sobre outra para torná-la subordinada, ou até a borda dela para posicionar ao lado.</p>' : '')+
+      '<div class="stage"><div class="chart tree'+(editable?' editable':'')+'" id="chart" style="zoom:'+zoom+'"><ul class="roots">'+
+        state.roots.map(function(n){ return '<li>'+nodeHTML(n)+'</li>'; }).join("")+
+      '</ul></div></div>'+
+      '<div class="legend"><div class="legend-box"><strong>Legenda</strong>'+
+        '<span class="sw"><i style="background:var(--green)"></i>Cargo / diretoria</span>'+
+        '<span class="sw"><i style="background:var(--lime)"></i>Destaque</span>'+
+        '<span class="sw"><i style="background:var(--green);border-radius:999px"></i>Conselho / bloco</span>'+
+        '<span class="sw"><i style="background:var(--team);border:1px solid var(--line)"></i>Equipe ou projeto</span>'+
+      '</div></div>'+
+      '<input type="file" id="f-logo" accept="image/*" class="sr" tabindex="-1" aria-hidden="true">'+
+      (selId && editable ? drawerHTML() : '');
+    st = document.querySelector(".stage"); if (st){ st.scrollLeft = sx; st.scrollTop = sy; }
+    bind();
+  }
+
+  function drawerHTML(){
+    var f = find(selId); if (!f) return "";
+    var n = f.node;
+    var opts = '<option value="">— Topo do organograma —</option>';
+    walk(state.roots, function(m){ if (!inSubtree(n, m.id)) opts += '<option value="'+esc(m.id)+'"'+(f.parent&&f.parent.id===m.id?' selected':'')+'>'+esc((m.cargo||"")+(m.nome?" · "+m.nome:""))+'</option>'; });
+    var av = n.foto ? '<img src="'+esc(n.foto)+'" alt="">' : '<span class="ini">'+esc(initials(n.nome||n.cargo))+'</span>';
+    return '<aside class="drawer" aria-label="Editar ficha"><div class="dhead"><h2>Editar ficha</h2><button class="btn icon" id="d-close" aria-label="Fechar">×</button></div>'+
+      '<div class="field"><label for="f-cargo">'+(n.tipo==="equipe"?"Rótulo (ex.: Equipe, Projeto)":"Cargo / área")+'</label><input type="text" id="f-cargo" value="'+esc(n.cargo)+'"></div>'+
+      '<div class="field"><label for="f-nome">'+(n.tipo==="equipe"?"Nome da equipe":"Nome da pessoa")+'</label><input type="text" id="f-nome" value="'+esc(n.nome)+'" placeholder="'+(n.tipo==="ficha"?"A definir":"")+'"></div>'+
+      '<div class="field"><label for="f-tipo">Tipo de ficha</label><select id="f-tipo">'+
+        '<option value="ficha"'+(n.tipo==="ficha"?" selected":"")+'>Pessoa com foto</option>'+
+        '<option value="bloco"'+(n.tipo==="bloco"?" selected":"")+'>Conselho / bloco (sem foto)</option>'+
+        '<option value="equipe"'+(n.tipo==="equipe"?" selected":"")+'>Equipe ou projeto</option></select></div>'+
+      '<label class="check"><input type="checkbox" id="f-dest"'+(n.destaque?" checked":"")+'> Destacar em verde-limão</label>'+
+      (n.tipo==="ficha" ? '<div class="field"><span class="flabel">Foto</span><div class="photo-row"><div class="avatar">'+av+'</div><div class="photo-btns"><button class="btn" id="b-foto">'+(n.foto?"Trocar foto":"Enviar foto")+'</button>'+(n.foto?'<button class="btn" id="b-nofoto">Remover foto</button>':'')+'</div></div><input type="file" id="f-foto" accept="image/*" class="sr" tabindex="-1" aria-hidden="true"></div>' : '')+
+      '<div class="field"><label for="f-parent">Subordinado a</label><select id="f-parent">'+opts+'</select></div>'+
+      '<div class="actions"><button class="btn" id="b-child">+ Subordinado</button><button class="btn" id="b-team">+ Equipe</button></div>'+
+      '<div class="actions"><button class="btn danger" id="b-del">Excluir ficha</button></div>'+
+      '<p class="note" id="del-note">'+(n.children.length?"Ao excluir, as fichas abaixo desta sobem um nível.":"")+'</p></aside>';
+  }
+
+  /* ---------- edits ---------- */
+  function changed(){ dirty = true; var s=document.getElementById("status"); if(s){ s.textContent=statusText(); s.className="status dirty"; } var b=document.getElementById("b-save"), d=document.getElementById("b-discard"); if(b) b.disabled=false; if(d) d.disabled=false; }
+  function newNode(tipo){ return {id:uid(), tipo:tipo, cargo: tipo==="equipe"?"Equipe":"Novo cargo", nome:"", destaque:false, foto:null, children:[]}; }
+  function moveNode(id, targetId, zone){
+    if (id === targetId) return;
+    var src = find(id); if (!src) return;
+    if (targetId && inSubtree(src.node, targetId)) return;
+    src.list.splice(src.index, 1);
+    if (!targetId){ state.roots.push(src.node); }
+    else {
+      var t = find(targetId);
+      if (zone === "inside") t.node.children.push(src.node);
+      else t.list.splice(t.index + (zone==="after"?1:0), 0, src.node);
+    }
+    changed(); render();
+  }
+  function resizeImage(file, square, max, type){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onerror = rej;
+      r.onload = function(){
+        var img = new Image();
+        img.onerror = rej;
+        img.onload = function(){
+          var c = document.createElement("canvas"), ctx = c.getContext("2d");
+          if (square){ var m = Math.min(img.width, img.height); c.width = c.height = max; ctx.drawImage(img, (img.width-m)/2, (img.height-m)/2, m, m, 0, 0, max, max); }
+          else { var k = Math.min(1, max/Math.max(img.width, img.height)); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); ctx.drawImage(img, 0, 0, c.width, c.height); }
+          res(c.toDataURL(type, 0.82));
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(file);
+    });
+  }
+
+  /* ---------- save ---------- */
+  function setStatus(t, isDirty){ var s=document.getElementById("status"); if(s){ s.textContent=t; s.className="status"+(isDirty?" dirty":""); } }
+  async function save(){
+    if (saving) return;
+    saving = true; render();
+    try {
+      await salvarDados(state);
+      savedJSON = JSON.stringify(state);
+      saving = false; dirty = false; render(); setStatus("Salvo");
+    } catch (e) {
+      saving = false; render();
+      setStatus("Não foi possível salvar. Tente de novo.", true);
+    }
+  }
+
+  /* ---------- events ---------- */
+  function setZoom(z){ zoom = Math.max(0.4, Math.min(1.6, Math.round(z*10)/10)); try{ localStorage.setItem("org-zoom", String(zoom)); }catch(e){} var c=document.getElementById("chart"); if(c) c.style.zoom = zoom; var o=document.getElementById("z-val"); if(o) o.textContent = Math.round(zoom*100)+"%"; }
+  function on(id, ev, fn){ var el = document.getElementById(id); if (el) el.addEventListener(ev, fn); }
+  function zoneFor(card, e){
+    var r = card.getBoundingClientRect(), v = card.classList.contains("equipe") && card.closest(".teams");
+    var p = v ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;
+    return { zone: p < 0.22 ? "before" : p > 0.78 ? "after" : "inside", axis: v ? "v" : "h" };
+  }
+  function clearDrop(){ document.querySelectorAll(".drop-before,.drop-after,.drop-inside").forEach(function(el){ el.classList.remove("drop-before","drop-after","drop-inside","h","v"); }); }
+
+  function bind(){
+    on("z-in","click",function(){ setZoom(zoom+0.1); });
+    on("z-out","click",function(){ setZoom(zoom-0.1); });
+    on("z-fit","click",function(){ var st=document.querySelector(".stage"), c=document.getElementById("chart"); if(!st||!c) return; var w = c.scrollWidth; setZoom(Math.min(1, (st.clientWidth-8)/w)); });
+    document.querySelectorAll(".card").forEach(function(card){
+      var id = card.getAttribute("data-id");
+      if (!editable) return;
+      card.addEventListener("click", function(){ selId = id; render(); var i=document.getElementById("f-nome"); if(i) i.focus(); });
+      card.addEventListener("keydown", function(e){ if (e.key==="Enter"||e.key===" "){ e.preventDefault(); selId=id; render(); } });
+      card.addEventListener("dragstart", function(e){ dragId = id; card.classList.add("dragging"); try{ e.dataTransfer.setData("text/plain", id); e.dataTransfer.effectAllowed="move"; }catch(x){} e.stopPropagation(); });
+      card.addEventListener("dragend", function(){ dragId = null; card.classList.remove("dragging"); clearDrop(); });
+      card.addEventListener("dragover", function(e){
+        if (!dragId || dragId===id) return;
+        var src = find(dragId); if (!src || inSubtree(src.node, id)) return;
+        e.preventDefault(); e.stopPropagation();
+        var z = zoneFor(card, e); clearDrop(); card.classList.add("drop-"+z.zone, z.axis);
+      });
+      card.addEventListener("dragleave", function(){ card.classList.remove("drop-before","drop-after","drop-inside","h","v"); });
+      card.addEventListener("drop", function(e){
+        if (!dragId) return; e.preventDefault(); e.stopPropagation();
+        var z = zoneFor(card, e), d = dragId; dragId = null; clearDrop(); moveNode(d, id, z.zone);
+      });
+    });
+    if (!editable) return;
+    on("b-save","click",save);
+    on("b-discard","click",function(){ state = JSON.parse(savedJSON); dirty=false; selId=null; render(); setStatus("Alterações descartadas"); });
+    on("b-new","click",function(){ var n = newNode("ficha"); state.roots.push(n); selId = n.id; changed(); render(); var i=document.getElementById("f-cargo"); if(i){ i.focus(); i.select(); } });
+    on("org-title","input",function(e){ state.title = e.target.textContent.trim() || "Organograma"; changed(); });
+    on("org-title","keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); e.target.blur(); } });
+    on("logo-btn","click",function(){ var f=document.getElementById("f-logo"); if(f) f.click(); });
+    on("f-logo","change",function(e){ var file=e.target.files&&e.target.files[0]; if(!file) return; resizeImage(file,false,240,"image/png").then(function(u){ state.logo=u; changed(); render(); }).catch(function(){ setStatus("Não consegui ler essa imagem. Use JPG ou PNG.", dirty); }); });
+    if (!selId) return;
+    var f = find(selId); if (!f){ selId=null; return; }
+    var n = f.node;
+    function rerenderChart(){ var chart=document.getElementById("chart"); if(chart){ chart.querySelector("ul.roots").innerHTML = state.roots.map(function(r){ return "<li>"+nodeHTML(r)+"</li>"; }).join(""); bindCardsOnly(); } }
+    function bindCardsOnly(){ /* re-binding everything is simplest */ var a=document.activeElement&&document.activeElement.id, s=a&&document.getElementById(a)&&document.getElementById(a).selectionStart; render(); var el=a&&document.getElementById(a); if(el){ el.focus(); try{ if(s!=null) el.setSelectionRange(s,s); }catch(x){} } }
+    on("f-cargo","input",function(e){ n.cargo = e.target.value; changed(); rerenderChart(); });
+    on("f-nome","input",function(e){ n.nome = e.target.value; changed(); rerenderChart(); });
+    on("f-tipo","change",function(e){ n.tipo = e.target.value; if(n.tipo==="equipe"&&(!n.cargo||n.cargo==="Novo cargo")) n.cargo="Equipe"; changed(); render(); });
+    on("f-dest","change",function(e){ n.destaque = e.target.checked; changed(); render(); });
+    on("f-parent","change",function(e){ var v = e.target.value; if (v) moveNode(n.id, v, "inside"); else moveNode(n.id, null); });
+    on("b-foto","click",function(){ var i=document.getElementById("f-foto"); if(i) i.click(); });
+    on("f-foto","change",function(e){ var file=e.target.files&&e.target.files[0]; if(!file) return; resizeImage(file,true,220,"image/jpeg").then(function(u){ n.foto=u; changed(); render(); }).catch(function(){ setStatus("Não consegui ler essa imagem. Use JPG ou PNG.", dirty); }); });
+    on("b-nofoto","click",function(){ n.foto=null; changed(); render(); });
+    on("b-child","click",function(){ var c=newNode("ficha"); n.children.push(c); selId=c.id; changed(); render(); var i=document.getElementById("f-cargo"); if(i){ i.focus(); i.select(); } });
+    on("b-team","click",function(){ var c=newNode("equipe"); n.children.push(c); selId=c.id; changed(); render(); var i=document.getElementById("f-nome"); if(i) i.focus(); });
+    on("d-close","click",function(){ selId=null; render(); });
+    var armed = false;
+    on("b-del","click",function(e){
+      if (!armed){ armed = true; e.target.textContent = "Confirmar exclusão"; setTimeout(function(){ armed=false; var b=document.getElementById("b-del"); if(b) b.textContent="Excluir ficha"; }, 4000); return; }
+      var g = find(n.id); if(!g) return;
+      g.list.splice.apply(g.list, [g.index, 1].concat(n.children));
+      selId = null; changed(); render();
+    });
+  }
+  document.addEventListener("keydown", function(e){ if (e.key==="Escape" && selId){ selId=null; render(); } });
+
+  editable = true;
+  render();
+  (async function(){
+    var d = await carregarDados();
+    if (d && d.roots){ state = d; savedJSON = JSON.stringify(d); render(); }
+  })();
+})();
+</script>
+</body>
+</html>
