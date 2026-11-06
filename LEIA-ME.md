@@ -73,7 +73,7 @@ O ícone aparece com o nome "Meia Noite" e abre em tela cheia, sem a barra do na
 - **Navegar:** arraste o fundo do organograma; use **Ctrl + rolagem** ou os botões para o zoom e **Ajustar** para ver tudo.
 - **Salvar:** botão **Salvar** (ou Ctrl + S). Nada é gravado até salvar.
 - **Backup:** menu **⋯** → **Baixar backup (JSON)**. Vale fazer de vez em quando.
-- **PDF:** botão **Exportar PDF** (na barra do organograma ou no menu **⋯**). Escolha a folha (A4, A3 ou Carta) e a orientação; na janela de impressão, selecione **Salvar como PDF**. Na aba Organograma o desenho inteiro é ajustado a uma única folha; nas outras abas o conteúdo segue em quantas folhas precisar. Sai sempre no tema claro.
+- **PDF:** botão **Exportar PDF** (na barra do organograma ou no menu **⋯**). Escolha o formato, a folha (A4, A3 ou Carta) e a orientação; na janela de impressão, selecione **Salvar como PDF**. Na aba Organograma há três formatos: **completo em uma folha**, **completo na vertical** (em pé, em quantas folhas precisar) e **por setor** (uma folha por área). Nas outras abas o conteúdo segue em quantas folhas precisar. Sai sempre no tema claro.
 - **Novas pessoas com acesso:** crie o usuário no Authentication e acrescente o e-mail na lista do `firestore.rules`.
 
 Limite: o organograma inteiro, com as fotos, precisa caber em 1 MB (cerca de 50 fotos). A página avisa se passar disso.

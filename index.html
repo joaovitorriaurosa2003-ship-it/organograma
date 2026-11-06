@@ -316,6 +316,19 @@ td:first-child{font-weight:600}
 .pr-title{font-family:var(--f-display);font-weight:700;font-size:21px;line-height:1.1;text-transform:uppercase}
 .pr-date{font-size:11px;color:#5d6167;text-align:right;white-space:nowrap}
 .pr-fit{position:relative;margin:0 auto;overflow:hidden}
+.pr-sec + .pr-sec{break-before:page;page-break-before:always}
+/* árvore vertical: cada pessoa embaixo de quem ela responde, com recuo */
+.pr-tree{margin-top:10px}
+.pr-tree ul{list-style:none;margin:0;padding:0}
+.pr-tree ul ul{margin-left:17px;padding-left:24px}
+.pr-tree li{position:relative;padding:4px 0}
+.pr-tree ul ul > li::before{content:"";position:absolute;left:-24px;top:0;bottom:0;border-left:1.5px dashed var(--line)}
+.pr-tree ul ul > li:last-child::before{bottom:auto;height:29px}
+.pr-tree ul ul > li::after{content:"";position:absolute;left:-24px;top:29px;width:22px;border-top:1.5px dashed var(--line)}
+#print-root .teams .card.pessoa{width:230px}
+.pr-tree .card.pessoa{width:340px;break-inside:avoid;page-break-inside:avoid;padding:6px 11px 6px 9px}
+.pr-tree .card.pessoa .prole{font-size:10px}
+.pr-tree .card.pessoa .pnome{font-size:12.5px}
 #print-root .legend{margin-top:8px;font-size:11px;justify-content:center}
 #print-root .legend b{font-size:11px}
 #print-root .bar,#print-root .btn,#print-root .stats{display:none}
@@ -719,8 +732,11 @@ function atualizarStats() {
 }
 function renderLegenda() {
   const el = $("#legend"); if (!el) return;
-  const usados = new Set(); walk(state.roots, n => { if (n.setor) usados.add(n.setor); });
-  el.innerHTML = "<b>Legenda</b>" + state.setores.filter(s => usados.has(s.id)).map(s => `<span class="lg"><i style="--c:${esc(s.cor)}"></i>${esc(s.nome)}</span>`).join("")
+  el.innerHTML = htmlLegenda(state.roots);
+}
+function htmlLegenda(raizes) {
+  const usados = new Set(); walk(raizes, n => { if (n.setor) usados.add(n.setor); });
+  return "<b>Legenda</b>" + state.setores.filter(s => usados.has(s.id)).map(s => `<span class="lg"><i style="--c:${esc(s.cor)}"></i>${esc(s.nome)}</span>`).join("")
     + '<span class="lg"><i class="hi"></i>Destaque</span><span class="lg"><i class="vg"></i>Vaga em estudo</span>';
 }
 
@@ -778,8 +794,8 @@ function atualizarCard(id) {
 }
 
 /* linhas tracejadas: cada trecho começa e termina num traço */
-function desenharLinhas() {
-  const ch = $("#chart"), svg = $("#links"); if (!ch || !svg) return;
+function desenharLinhas(ch = $("#chart"), svg = $("#links"), raizes = state.roots) {
+  if (!ch || !svg) return;
   const out = [];
   const seg = (x1, y1, x2, y2) => {
     const L = Math.hypot(x2 - x1, y2 - y1); if (L < .5) return;
@@ -788,7 +804,7 @@ function desenharLinhas() {
     out.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"${da}/>`);
   };
   const el = id => $(`.card[data-id="${CSS.escape(id)}"]`, ch);
-  walk(state.roots, n => {
+  walk(raizes, n => {
     if (!n.children.length) return;
     const pe = el(n.id); if (!pe) return;
     const p = pos(pe, ch), px = (p.l + p.r) / 2;
@@ -1186,22 +1202,29 @@ $("#f-import").addEventListener("change", e => {
    com texto nítido mesmo quando o organograma é reduzido para caber na folha. */
 const FOLHAS = { A4: [210, 297], A3: [297, 420], Carta: [215.9, 279.4] };
 const MM = 96 / 25.4, MARGEM = 10;
-let pdfPref = { folha: "A4", orient: "auto" }, impressao = false;
-try { const p = JSON.parse(localStorage.getItem("org-pdf") || "null"); if (p && FOLHAS[p.folha]) pdfPref = { folha: p.folha, orient: ["auto", "retrato", "paisagem"].includes(p.orient) ? p.orient : "auto" }; } catch (e) {}
+let pdfPref = { folha: "A4", orient: "auto", modo: "uma" }, impressao = false;
+try { const p = JSON.parse(localStorage.getItem("org-pdf") || "null"); if (p && FOLHAS[p.folha]) pdfPref = { folha: p.folha, orient: ["auto", "retrato", "paisagem"].includes(p.orient) ? p.orient : "auto", modo: ["uma", "vertical", "setorial"].includes(p.modo) ? p.modo : "uma" }; } catch (e) {}
 const guardarPdf = () => { try { localStorage.setItem("org-pdf", JSON.stringify(pdfPref)); } catch (e) {} };
+const MODOS = {
+  uma: ["Completo em uma folha", "O organograma inteiro é reduzido para caber em uma única folha."],
+  vertical: ["Completo na vertical (várias folhas)", "Folha em pé, com cada pessoa abaixo de quem ela responde. Continua nas folhas seguintes quando precisa, sem cortar fichas no meio, e mantém o tamanho legível."],
+  setorial: ["Por setor (uma folha por área)", "Uma folha para cada área (Direção e as abas de setor), cada uma ajustada ao tamanho da folha. Quem responde a alguém de outra área aparece com a indicação \"Responde a\"."]
+};
 function editorPdf(body, t) {
   t.textContent = "Exportar PDF";
-  const org = aba === "Organograma" && $("#chart");
-  body.innerHTML = `<p class="note">${org
-      ? "O organograma inteiro é reduzido para caber em uma única folha. O PDF fica vetorial: dá para aproximar no leitor sem perder nitidez."
-      : `O conteúdo da aba <b>${esc(aba)}</b> é distribuído em quantas folhas forem necessárias, sem cortar cartões no meio.`}</p>
-    <div class="field"><label for="p-folha">Tamanho da folha</label><select id="p-folha">${Object.keys(FOLHAS).map(k => `<option value="${k}"${k === pdfPref.folha ? " selected" : ""}>${k}</option>`).join("")}</select>${org ? "<small>Em organogramas grandes, A3 deixa os nomes mais legíveis no papel.</small>" : ""}</div>
-    <div class="field"><label for="p-orient">Orientação</label><select id="p-orient">
+  const org = aba === "Organograma" && state.roots.length;
+  body.innerHTML = (org ? `<div class="field"><label for="p-modo">Formato</label><select id="p-modo">${Object.entries(MODOS).map(([k, v]) => `<option value="${k}"${k === pdfPref.modo ? " selected" : ""}>${v[0]}</option>`).join("")}</select><small id="p-desc">${MODOS[pdfPref.modo][1]}</small></div>`
+      : `<p class="note">O conteúdo da aba <b>${esc(aba)}</b> é distribuído em quantas folhas forem necessárias, sem cortar cartões no meio.</p>`) + `
+    <div class="field"><label for="p-folha">Tamanho da folha</label><select id="p-folha">${Object.keys(FOLHAS).map(k => `<option value="${k}"${k === pdfPref.folha ? " selected" : ""}>${k}</option>`).join("")}</select></div>
+    <div class="field" id="p-orient-f"><label for="p-orient">Orientação</label><select id="p-orient">
       <option value="auto"${pdfPref.orient === "auto" ? " selected" : ""}>Automática (a que aproveita melhor a folha)</option>
       <option value="retrato"${pdfPref.orient === "retrato" ? " selected" : ""}>Retrato (em pé)</option>
       <option value="paisagem"${pdfPref.orient === "paisagem" ? " selected" : ""}>Paisagem (deitada)</option></select></div>
     <div><button class="btn primary" id="p-go">Gerar PDF</button></div>
     <p class="note">Na janela que abrir, escolha <b>Salvar como PDF</b> em Destino e clique em Salvar. Deixe a escala em <b>Padrão</b> para o ajuste à folha funcionar.</p>`;
+  const ver = () => { const f = $("#p-orient-f"); if (f) f.hidden = org && pdfPref.modo === "vertical"; };
+  ver();
+  on("p-modo", "change", e => { pdfPref.modo = e.target.value; guardarPdf(); $("#p-desc").textContent = MODOS[pdfPref.modo][1]; ver(); });
   on("p-folha", "change", e => { pdfPref.folha = e.target.value; guardarPdf(); });
   on("p-orient", "change", e => { pdfPref.orient = e.target.value; guardarPdf(); });
   on("p-go", "click", () => { fecharEditor(); prepararImpressao(); setTimeout(() => window.print(), 60); });
@@ -1213,37 +1236,74 @@ function limparClone(c) {
   $$("[style*='opacity']", c).forEach(e => e.style.opacity = "");
   return c;
 }
+const descricao = n => (n.cargo || "Sem cargo") + (n.nome ? " · " + n.nome : "");
+/* áreas = abas de setor; setores sem aba ficam em "Direção" */
+function areasPdf() {
+  const g = new Map();
+  state.setores.forEach(s => { const a = (s.aba || "").trim() || "Direção"; if (!g.has(a)) g.set(a, new Set()); g.get(a).add(s.id); });
+  return [...g.entries()].sort((x, y) => (x[0] === "Direção" ? -1 : y[0] === "Direção" ? 1 : 0));
+}
+function florestaDe(ids) {
+  const proj = n => ({ ...n, children: n.children.filter(c => ids.has(c.setor)).map(proj) });
+  const out = [];
+  walk(state.roots, (n, p) => {
+    if (!ids.has(n.setor) || (p && ids.has(p.setor))) return;
+    const r = proj(n);
+    if (p) r.nota = "Responde a: " + descricao(p) + (n.nota ? " · " + n.nota : "");
+    out.push(r);
+  });
+  return out;
+}
+/* no PDF, equipes de 3 ou mais pessoas sem subordinados ficam em coluna: o desenho estreita e as letras crescem */
+function htmlNoPdf(n) {
+  let h = htmlCard(n);
+  if (!n.children.length) return h;
+  if (n.children.length >= 3 && n.children.every(c => !c.children.length))
+    return h + `<div class="teams">${n.children.map(c => `<div class="team-row">${htmlCard({ ...c, tipo: "pessoa" })}</div>`).join("")}</div>`;
+  return h + `<ul>${n.children.map(c => `<li>${htmlNoPdf(c)}</li>`).join("")}</ul>`;
+}
+function htmlArvore(lista) {
+  return `<ul>${lista.map(n => `<li>${htmlCard({ ...n, tipo: "pessoa" })}${n.children.length ? htmlArvore(n.children) : ""}</li>`).join("")}</ul>`;
+}
 function prepararImpressao() {
   const root = $("#print-root"); if (!root || !state) return;
   impressao = true;
-  const ch = aba === "Organograma" ? $("#chart") : null;
-  const cw = ch ? ch.offsetWidth : 0, chh = ch ? ch.offsetHeight : 0;
   const [a, b] = FOLHAS[pdfPref.folha] || FOLHAS.A4;
-  const area = (pw, ph) => ({ W: (pw - 2 * MARGEM) * MM, H: (ph - 2 * MARGEM) * MM });
-  let paisagem = pdfPref.orient === "paisagem";
-  if (pdfPref.orient === "auto") {
-    if (ch) { const r = area(a, b), p = area(b, a); paisagem = Math.min(p.W / cw, (p.H - 90) / chh) >= Math.min(r.W / cw, (r.H - 90) / chh); }
-    else paisagem = false;
-  }
-  const pw = paisagem ? b : a, ph = paisagem ? a : b, { W, H } = area(pw, ph);
+  const area = paisagem => { const pw = paisagem ? b : a, ph = paisagem ? a : b; return { W: (pw - 2 * MARGEM) * MM, H: (ph - 2 * MARGEM) * MM }; };
   let st = $("#pr-page"); if (!st) { st = document.createElement("style"); st.id = "pr-page"; document.head.append(st); }
-  st.textContent = `@page{size:${pw}mm ${ph}mm;margin:${MARGEM}mm}`;
+  st.textContent = `@page{size:${a}mm ${b}mm;margin:${MARGEM}mm}@page pr-r{size:${a}mm ${b}mm;margin:${MARGEM}mm}@page pr-l{size:${b}mm ${a}mm;margin:${MARGEM}mm}`;
   const hoje = new Date().toLocaleDateString("pt-BR");
-  root.innerHTML = `<header class="pr-head"><img src="${esc(state.logo || LOGO_PADRAO)}" alt="">
+  const cab = sub => `<header class="pr-head"><img src="${esc(state.logo || LOGO_PADRAO)}" alt="">
     <div class="pr-brand"><div class="pr-eyebrow">${esc(state.subtitulo || "")}</div><div class="pr-title">${esc(state.titulo || "Organograma")}</div></div>
-    <div class="pr-date">${esc(aba)}<br>${hoje}</div></header>` + (ch ? `<div class="pr-fit"></div><div class="legend">${$("#legend") ? $("#legend").innerHTML : ""}</div>` : `<div class="pr-flow"></div>`);
-  if (ch) {
-    root.style.width = W + "px"; root.classList.add("medir");
-    const reserva = root.offsetHeight + 8;
-    root.classList.remove("medir"); root.style.width = "";
-    const s = Math.min(W / cw, (H - reserva) / chh, 1);
-    const fit = $(".pr-fit", root); fit.style.width = cw * s + "px"; fit.style.height = chh * s + "px";
-    const c = limparClone(ch.cloneNode(true)); c.style.transform = `scale(${s})`; fit.append(c);
+    <div class="pr-date">${esc(sub)}<br>${hoje}</div></header>`;
+  root.innerHTML = ""; root.classList.add("medir");
+  const secao = (html, paisagem) => { const s = document.createElement("section"); s.className = "pr-sec"; s.innerHTML = html; s.style.page = paisagem ? "pr-l" : "pr-r"; root.append(s); return s; };
+  /* uma folha com a árvore inteira (ou de uma área), reduzida para caber */
+  const ajustada = (raizes, sub) => {
+    const s = secao(cab(sub) + `<div class="pr-fit"><div class="chart"><svg class="links" aria-hidden="true"></svg><ul class="roots">${raizes.map(n => `<li>${htmlNoPdf(n)}</li>`).join("")}</ul></div></div><div class="legend">${htmlLegenda(raizes)}</div>`, false);
+    const ch = $(".chart", s), cw = ch.offsetWidth, chh = ch.offsetHeight;
+    desenharLinhas(ch, $(".links", s), raizes);
+    const testar = paisagem => { const { W, H } = area(paisagem); s.style.width = W + "px"; const res = s.offsetHeight + 8; return { paisagem, s: Math.min(W / cw, (H - res) / chh, 1) }; };
+    let r = pdfPref.orient === "auto" ? [testar(false), testar(true)].sort((x, y) => y.s - x.s)[0] : testar(pdfPref.orient === "paisagem");
+    const fit = $(".pr-fit", s); fit.style.width = cw * r.s + "px"; fit.style.height = chh * r.s + "px";
+    ch.style.transform = `scale(${r.s})`; s.style.page = r.paisagem ? "pr-l" : "pr-r";
+  };
+  let nomeArq = aba;
+  if (aba === "Organograma" && state.roots.length) {
+    if (pdfPref.modo === "vertical") {
+      secao(cab("Organograma completo") + `<div class="legend">${htmlLegenda(state.roots)}</div><div class="pr-tree">${htmlArvore(state.roots)}</div>`, false);
+      nomeArq = "Organograma vertical";
+    } else if (pdfPref.modo === "setorial") {
+      areasPdf().forEach(([nome, ids]) => { const f = florestaDe(ids); if (f.length) ajustada(f, nome); });
+      nomeArq = "Organograma por setor";
+    } else ajustada(state.roots, "Organograma");
   } else {
-    const c = limparClone($("#panel").cloneNode(true));
-    $(".pr-flow", root).append(...c.childNodes);
+    const s = secao(cab(aba) + '<div class="pr-flow"></div>', pdfPref.orient === "paisagem");
+    $(".pr-flow", s).append(...limparClone($("#panel").cloneNode(true)).childNodes);
   }
-  document.title = `${state.titulo || "Organograma"} - ${aba} - ${hoje.replace(/\//g, "-")}`;
+  $$(".pr-sec", root).forEach(s => s.style.width = "");
+  root.classList.remove("medir");
+  document.title = `${state.titulo || "Organograma"} - ${nomeArq} - ${hoje.replace(/\//g, "-")}`;
 }
 function limparImpressao() {
   impressao = false;
